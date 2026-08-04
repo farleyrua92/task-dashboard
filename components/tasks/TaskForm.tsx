@@ -2,10 +2,21 @@
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useTaskForm, TaskFormValues } from "@/hooks/useTaskForm";
+import { FileUpload } from "@/components/tasks/FileUpload";
+import { useTaskForm } from "@/hooks/useTaskForm";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { createTask } from "@/lib/api";
+import { Task } from "@/lib/types";
 
-export function TaskForm({ onCreate }: { onCreate: (values: TaskFormValues) => void }) {
-  const { values, errors, submitted, handleChange, handleSubmit } = useTaskForm(onCreate);
+export function TaskForm({ onCreate }: { onCreate: (task: Task) => void }) {
+  const { attachment, error: fileError, handleFileChange, clear: clearFile } = useFileUpload();
+
+  const { values, errors, submitted, loading, apiError, handleChange, handleSubmit } =
+    useTaskForm(async (formValues) => {
+      const task = await createTask({ ...formValues, attachment: attachment ?? undefined });
+      onCreate(task);
+      clearFile();
+    });
 
   return (
     <form
@@ -21,6 +32,7 @@ export function TaskForm({ onCreate }: { onCreate: (values: TaskFormValues) => v
         value={values.title}
         onChange={handleChange}
         error={errors.title}
+        disabled={loading}
         placeholder="E.g.: Set up CI/CD pipeline"
       />
 
@@ -34,9 +46,10 @@ export function TaskForm({ onCreate }: { onCreate: (values: TaskFormValues) => v
           value={values.description}
           onChange={handleChange}
           rows={3}
+          disabled={loading}
           aria-invalid={!!errors.description}
           className={
-            "rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-600 " +
+            "rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-600 disabled:cursor-not-allowed disabled:bg-gray-50 " +
             (errors.description ? "border-red-500" : "border-gray-300")
           }
           placeholder="Optional details (max. 200 characters)"
@@ -55,7 +68,8 @@ export function TaskForm({ onCreate }: { onCreate: (values: TaskFormValues) => v
           name="status"
           value={values.status}
           onChange={handleChange}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-600"
+          disabled={loading}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-600 disabled:cursor-not-allowed disabled:bg-gray-50"
         >
           <option value="pending">Pending</option>
           <option value="in-progress">In progress</option>
@@ -63,9 +77,25 @@ export function TaskForm({ onCreate }: { onCreate: (values: TaskFormValues) => v
         </select>
       </div>
 
+      <FileUpload
+        attachment={attachment}
+        error={fileError}
+        disabled={loading}
+        onChange={handleFileChange}
+        onClear={clearFile}
+      />
+
+      {apiError && (
+        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {apiError}
+        </p>
+      )}
+
       <div className="flex items-center gap-3">
-        <Button type="submit">Create task</Button>
-        {submitted && (
+        <Button type="submit" disabled={loading} aria-busy={loading}>
+          {loading ? "Saving..." : "Create task"}
+        </Button>
+        {submitted && !loading && (
           <span role="status" className="text-sm text-green-600">
             ✓ Task created
           </span>

@@ -18,6 +18,20 @@ export function TaskRow({ task }: { task: Task }) {
           {status.text}
         </span>
       </td>
+      <td className="px-4 py-3 text-sm">
+        {task.attachment ? (
+          <a
+            href={task.attachment.dataUrl}
+            download={task.attachment.name}
+            className="text-teal-700 hover:underline"
+            title={task.attachment.name}
+          >
+            📎 {task.attachment.name}
+          </a>
+        ) : (
+          <span className="text-gray-400">—</span>
+        )}
+      </td>
     </tr>
   );
 }
