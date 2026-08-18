@@ -24,6 +24,9 @@ export function TaskTable({ tasks }: { tasks: Task[] }) {
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               Status
             </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Attachment
+            </th>
           </tr>
         </thead>
         <tbody>

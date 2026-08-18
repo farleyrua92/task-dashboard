@@ -14,10 +14,12 @@ const INITIAL: TaskFormValues = {
   status: "pending",
 };
 
-export function useTaskForm(onValidSubmit: (values: TaskFormValues) => void) {
+export function useTaskForm(onValidSubmit: (values: TaskFormValues) => Promise<void>) {
   const [values, setValues] = useState<TaskFormValues>(INITIAL);
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -34,20 +36,29 @@ export function useTaskForm(onValidSubmit: (values: TaskFormValues) => void) {
     return next;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validationErrors = validate(values);
     setErrors(validationErrors);
+    setSubmitted(false);
 
     if (Object.keys(validationErrors).length > 0) {
-      setSubmitted(false);
       return;
     }
 
-    onValidSubmit(values);
-    setValues(INITIAL);
-    setSubmitted(true);
+    setLoading(true);
+    setApiError(null);
+
+    try {
+      await onValidSubmit(values);
+      setValues(INITIAL);
+      setSubmitted(true);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  return { values, errors, submitted, handleChange, handleSubmit };
+  return { values, errors, submitted, loading, apiError, handleChange, handleSubmit };
 }
